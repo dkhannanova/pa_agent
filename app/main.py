@@ -3,13 +3,26 @@ from pydantic import BaseModel
 import os
 from supabase import create_client
 from app.agent.graph import build_graph
+from typing import Optional, List, Dict, Any
 
 app = FastAPI()
 graph = build_graph()
 
+class ChatContext(BaseModel):
+    goal: Optional[str] = None
+    metric: Optional[str] = None
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    compare_mode: Optional[str] = None
+    filters: Optional[List[Dict[str, Any]]] = None
+    breakdowns: Optional[List[str]] = None
+    strict_mode: Optional[bool] = True
+    notes: Optional[str] = None
+
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
+    context: ChatContext | None = None
 
 def supabase_client():
     url = os.environ["SUPABASE_URL"]
@@ -37,7 +50,18 @@ def chat(req: ChatRequest):
     }).execute()
 
     # 3) run workflow
-    out = graph.invoke({"session_id": session_id, "user_message": req.message, "response": None})
+        # 2.5) extract context dict (or empty)
+    ctx = req.context.model_dump() if req.context else {}
+
+    # 2.6) save the context as an artifact (optional but very useful)
+    sb.table("agent_artifacts").insert({
+        "session_id": session_id,
+        "type": "context",
+        "title": "Run context",
+        "content": ctx,
+        "metadata": {"source": "lovable"}
+    }).execute()
+    out = graph.invoke({"session_id": session_id, "user_message": req.message, "context": ctx, "response": None})
     resp = out["response"].model_dump()
 
     # 4) save assistant message + artifact
