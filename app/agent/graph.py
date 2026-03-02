@@ -6,17 +6,29 @@ from app.agent.tools import catalog_search
 class AgentState(TypedDict):
     session_id: str
     user_message: str
+    context: dict
     response: Optional[AgentResponse]
 
 def clarify_node(state: AgentState) -> AgentState:
+    ctx = state.get("context") or {}
+
+    questions = []
+    # Ask only if missing
+    if not ctx.get("date_from") or not ctx.get("date_to"):
+        questions.append(
+            ClarifyingQuestion(id="date_range", question="Укажи период анализа (date_from/date_to) или выбери WoW/DoD.")
+        )
+    if not ctx.get("metric"):
+        questions.append(
+            ClarifyingQuestion(id="metric", question="Какую метрику анализируем? (например conversion)")
+        )
+
     resp = AgentResponse(
         session_id=state["session_id"],
-        clarifying_questions=[
-            ClarifyingQuestion(id="period", question="Какой период сравниваем? (DoD/WoW/custom)")
-        ],
+        clarifying_questions=questions,
         analysis_plan=[],
         findings=[],
-        next_step="Ответь периодом — и я составлю план анализа."
+        next_step="Если контекст заполнен, я составлю план анализа."
     )
     state["response"] = resp
     return state
