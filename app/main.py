@@ -39,6 +39,17 @@ def health():
 def chat(req: ChatRequest):
     sb = supabase_client()
 
+    # If Supabase env vars are not set yet, run without saving anything
+    if sb is None:
+        session_id = req.session_id or "local"
+        out = graph.invoke({
+            "session_id": session_id,
+            "user_message": req.message,
+            "context": {},
+            "response": None
+        })
+        return out["response"].model_dump()
+
     # 1) session
     if req.session_id is None:
         res = sb.table("agent_sessions").insert({"title": "Product Analytics Agent"}).execute()
