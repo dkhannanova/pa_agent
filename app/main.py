@@ -4,6 +4,9 @@ import os
 from supabase import create_client
 from app.agent.graph import build_graph
 from typing import Optional, List, Dict, Any
+from fastapi import HTTPException
+from app.agent.sql_gen import generate_sql
+from app.agent.ch import run_select
 
 app = FastAPI()
 graph = build_graph()
@@ -92,3 +95,40 @@ def chat(req: ChatRequest):
     }).execute()
 
     return resp
+@app.post("/metric")
+def metric(req: ChatRequest):
+    # 1) LLM generates SQL
+    try:
+        gen = generate_sql(req.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM error: {e}")
+
+    if gen.get("needs_clarification"):
+        return {
+            "needs_clarification": True,
+            "question": gen.get("clarification_question"),
+            "assumptions": gen.get("assumptions", "")
+        }
+
+    sql = gen.get("sql")
+    if not sql:
+        raise HTTPException(status_code=400, detail="No SQL generated")
+
+    # 2) Execute SQL in ClickHouse
+    try:
+        columns, rows = run_select(sql)
+    except Exception as e:
+        return {
+            "needs_clarification": True,
+            "question": f"Query failed: {e}. Please уточни таблицу/поля или период.",
+            "sql": sql,
+            "assumptions": gen.get("assumptions", "")
+        }
+
+    return {
+        "needs_clarification": False,
+        "sql": sql,
+        "columns": columns,
+        "rows": rows[:2000],
+        "assumptions": gen.get("assumptions", "")
+    }    
