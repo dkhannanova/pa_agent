@@ -25,8 +25,10 @@ class ChatRequest(BaseModel):
     context: ChatContext | None = None
 
 def supabase_client():
-    url = os.environ["SUPABASE_URL"]
-    key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]  # только сервер!
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if not url or not key:
+        return None
     return create_client(url, key)
 
 @app.get("/health")
