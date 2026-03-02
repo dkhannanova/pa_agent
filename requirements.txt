@@ -5,3 +5,5 @@ supabase==2.6.0
 langgraph==0.2.35
 langchain-core==0.3.22
 python-dotenv==1.0.1
+clickhouse-connect==0.8.15
+openai==1.55.3
