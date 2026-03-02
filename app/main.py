@@ -29,7 +29,11 @@ def supabase_client():
     key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
     if not url or not key:
         return None
-    return create_client(url, key)
+    try:
+        return create_client(url, key)
+    except Exception:
+        # Supabase is misconfigured (e.g., invalid key) — run without persistence
+        return None
 
 @app.get("/health")
 def health():
