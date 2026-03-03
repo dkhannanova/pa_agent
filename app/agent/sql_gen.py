@@ -9,6 +9,9 @@ Rules:
 - No semicolons.
 - Must include a time filter if the user mentions a period.
 - Use LIMIT 2000 if returning raw rows.
+- Use ONLY table course.events and only the columns listed in SCHEMA.
+- If something is missing (e.g., event names for conversion), ask for clarification instead of guessing.
+- For "by platform" group by user_properties_platform; for "by app version" group by user_app_version.
 Return JSON with keys:
 sql (string), assumptions (string), needs_clarification (boolean), clarification_question (string).
 """
