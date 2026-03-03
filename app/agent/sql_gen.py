@@ -1,4 +1,5 @@
 import os
+import json
 from openai import OpenAI
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -35,13 +36,16 @@ def generate_sql(user_request: str) -> dict:
     model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
     msg = f"{SCHEMA}\n\nUSER REQUEST:\n{user_request}\n"
 
-    resp = client.responses.create(
+    # Compatible with older OpenAI Python SDKs where `client.responses` may not exist.
+    resp = client.chat.completions.create(
         model=model,
-        input=[
+        messages=[
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": msg},
         ],
         response_format={"type": "json_object"},
-        max_output_tokens=600,
+        max_tokens=600,
     )
-    return resp.output[0].content[0].json
+
+    # message.content is a JSON string because response_format=json_object
+    return json.loads(resp.choices[0].message.content)
