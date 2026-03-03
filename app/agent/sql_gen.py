@@ -13,8 +13,19 @@ Return JSON with keys:
 sql (string), assumptions (string), needs_clarification (boolean), clarification_question (string).
 """
 
-SCHEMA = """SCHEMA (edit later):
-You will be given tables and columns later. For now, ask clarification if schema is missing.
+SCHEMA = """ClickHouse schema context:
+
+Table: course.events
+Columns:
+- timestamp DateTime64(3,'UTC')   -- event time in UTC
+- user_client_id String          -- user/client identifier
+- action_type LowCardinality(String) -- event/action name
+- user_properties_platform LowCardinality(String) -- e.g., ios/android/web
+- user_app_version String
+
+Hard rules:
+- Use ONLY these columns and this table.
+- If the user asks for conversion but does not specify the two event names (A and B), set needs_clarification=true and ask which action_type values represent step A and step B.
 """
 
 def generate_sql(user_request: str) -> dict:
