@@ -97,6 +97,7 @@ def chat(req: ChatRequest):
     return resp
 @app.post("/metric")
 def metric(req: ChatRequest):
+    print("METRIC HIT", req.message)
     # 1) LLM generates SQL
     try:
         gen = generate_sql(req.message)
