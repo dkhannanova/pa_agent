@@ -7,8 +7,18 @@ from typing import Optional, List, Dict, Any
 from fastapi import HTTPException
 from app.agent.sql_gen import generate_sql
 from app.agent.ch import run_select
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://785feac8-4251-4019-9eac-94c53ac43d07.lovableproject.com",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 graph = build_graph()
 
 class ChatContext(BaseModel):
