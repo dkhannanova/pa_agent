@@ -13,6 +13,8 @@ Rules:
 - Use ONLY table course.events and only the columns listed in SCHEMA.
 - If something is missing (e.g., event names for conversion), ask for clarification instead of guessing.
 - For "by platform" group by user_properties_platform; for "by app version" group by user_app_version.
+- If the user requests a relative period (e.g., "last 7 days"), compute it relative to the latest available data:
+  use anchor_ts = (SELECT max(timestamp) FROM course.events) and filter timestamp >= anchor_ts - INTERVAL N DAY.
 Return JSON with keys:
 sql (string), assumptions (string), needs_clarification (boolean), clarification_question (string).
 """
@@ -30,6 +32,8 @@ Columns:
 Hard rules:
 - Use ONLY these columns and this table.
 - If the user asks for conversion but does not specify the two event names (A and B), set needs_clarification=true and ask which action_type values represent step A and step B.
+Data availability:
+- Data exists only for 2026-12-01 .. 2026-12-14 (UTC). Use max(timestamp) from the table as the anchor for "last N days".
 """
 
 def generate_sql(user_request: str) -> dict:
